@@ -15,24 +15,27 @@
  */
 package io.vertx.webclient.impl;
 
+import io.vertx.core.Handler;
 import io.vertx.core.VertxException;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.webclient.HttpRequest;
-import io.vertx.webclient.WebClient;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class WebClientImpl implements WebClient {
+public class WebClientImpl implements WebClientInternal {
 
-  private final HttpClient client;
+  final HttpClient httpClient;
+  final List<Handler<HttpContext<?>>> interceptors = new CopyOnWriteArrayList<>();
 
-  public WebClientImpl(HttpClient client) {
-    this.client = client;
+  public WebClientImpl(HttpClient httpClient) {
+    this.httpClient = httpClient;
   }
 
   @Override
@@ -156,20 +159,20 @@ public class WebClientImpl implements WebClient {
   }
 
   public HttpRequest request(HttpMethod method, String requestURI) {
-    HttpRequestImpl request = new HttpRequestImpl(client, method);
+    HttpRequestImpl request = new HttpRequestImpl(this, method);
     request.uri = requestURI;
     return request;
   }
 
   public HttpRequest request(HttpMethod method, String host, String requestURI) {
-    HttpRequestImpl request = new HttpRequestImpl(client, method);
+    HttpRequestImpl request = new HttpRequestImpl(this, method);
     request.host = host;
     request.uri = requestURI;
     return request;
   }
 
   public HttpRequest request(HttpMethod method, int port, String host, String requestURI) {
-    HttpRequestImpl request = new HttpRequestImpl(client, method);
+    HttpRequestImpl request = new HttpRequestImpl(this, method);
     request.port = port;
     request.host = host;
     request.uri = requestURI;
@@ -184,10 +187,15 @@ public class WebClientImpl implements WebClient {
     } catch (MalformedURLException e) {
       throw new VertxException("Invalid url: " + surl);
     }
-    HttpRequestImpl request = new HttpRequestImpl(client, method);
+    HttpRequestImpl request = new HttpRequestImpl(this, method);
     request.port = url.getPort();
     request.host = url.getHost();
     request.uri = url.getFile();
     return request;
+  }
+
+  @Override
+  public void addInterceptor(Handler<HttpContext<?>> interceptor) {
+    interceptors.add(interceptor);
   }
 }
