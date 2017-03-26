@@ -350,25 +350,29 @@ public class Utils extends io.vertx.core.impl.Utils {
   public static String readFileToString(Vertx vertx, String resource, Charset charset) {
     try {
       Buffer buff = vertx.fileSystem().readFileBlocking(resource);
-      int buffLen = buff.length();
-      ByteBuf byteBuf = buff.getByteBuf();
-      ByteBuf convertedBuf = Unpooled.buffer(buffLen, buffLen);
+      if (!System.lineSeparator().equals("\r\n")) {
+        return buff.toString();
+      } else {
+        int buffLen = buff.length();
+        ByteBuf byteBuf = buff.getByteBuf();
+        ByteBuf convertedBuf = Unpooled.buffer(buffLen, buffLen);
 
-      while (byteBuf.isReadable()) {
-        int c = byteBuf.readUnsignedByte();
-        // if \r encountered and next character is \n, skip
-        // Implementation adapted from ByteBufInputStream
-        if (!(c == '\r' && byteBuf.isReadable() && byteBuf.getUnsignedByte(byteBuf.readerIndex()) == '\n')) {
-          convertedBuf.writeByte(c);
+        while (byteBuf.isReadable()) {
+          int c = byteBuf.readUnsignedByte();
+          // if \r encountered and next character is \n, skip
+          // Implementation adapted from ByteBufInputStream
+          if (!(c == '\r' && byteBuf.isReadable() && byteBuf.getUnsignedByte(byteBuf.readerIndex()) == '\n')) {
+            convertedBuf.writeByte(c);
+          }
         }
+
+        // Original ByteBuf is unreleasable, but just in case the implementation changes...
+        byteBuf.release();
+
+        String result = convertedBuf.toString(charset);
+        convertedBuf.release();
+        return result;
       }
-
-      // Original ByteBuf is unreleasable, but just in case the implementation changes...
-      byteBuf.release();
-
-      String result = convertedBuf.toString(charset);
-      convertedBuf.release();
-      return result;
     } catch (Exception e) {
       throw new VertxException(e);
     }
