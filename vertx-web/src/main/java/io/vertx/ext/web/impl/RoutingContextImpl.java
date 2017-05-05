@@ -29,6 +29,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.*;
 import io.vertx.ext.web.Locale;
+import io.vertx.ext.web.handler.impl.TimeoutBodyEndHandler;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -334,7 +335,7 @@ public class RoutingContextImpl extends RoutingContextImplBase {
       headersEndHandlers.clear();
     }
     if (bodyEndHandlers != null) {
-      bodyEndHandlers.clear();
+      bodyEndHandlers.entrySet().removeIf(entry -> !(entry.getValue().getClass().equals(TimeoutBodyEndHandler.class)));
     }
 
     failure = null;

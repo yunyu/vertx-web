@@ -40,7 +40,7 @@ public class TimeoutHandlerImpl implements TimeoutHandler {
     // We send a error response after timeout
     long tid = ctx.vertx().setTimer(timeout, t -> ctx.fail(errorCode));
 
-    ctx.addBodyEndHandler(v -> ctx.vertx().cancelTimer(tid));
+    ctx.addBodyEndHandler(new TimeoutBodyEndHandler(ctx, tid));
 
     ctx.next();
   }
